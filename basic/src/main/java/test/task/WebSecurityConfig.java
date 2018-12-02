@@ -1,11 +1,13 @@
 package test.task;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.csrf.CsrfTokenRepository;
 
 @Configuration
 @EnableWebSecurity
@@ -16,18 +18,28 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                 .anyRequest().authenticated()
                 .and().httpBasic()
                 .authenticationEntryPoint(getBasicAuthEntryPoint());*/
-
-        http.authorizeRequests()
-                .antMatchers("/logout", "/user/**").permitAll()
-                .anyRequest().authenticated()
-                .and()
-                .csrf().disable().antMatcher("/login").httpBasic()
-                .authenticationEntryPoint(getBasicAuthEntryPoint());
+        http
+            .csrf().disable()
+            .authorizeRequests()
+            .anyRequest().authenticated()
+            .and()
+            .authenticationProvider(provider())
+            .httpBasic().realmName("MY-APP")
+            /*.and()
+             .csrf()
+             .csrfTokenRepository(csrfTokenRepository())*/
+    
+        ;
 
     }
-
+    
     @Bean
-    public CustomBasicAuthenticationEntryPoint getBasicAuthEntryPoint(){
-        return new CustomBasicAuthenticationEntryPoint();
+    public CsrfTokenRepository csrfTokenRepository() {
+                return CookieCsrfTokenRepository.withHttpOnlyFalse();
+    }
+    
+    @Bean
+    public AuthenticationProvider provider(){
+        return new ExternalServiceAuthProvider();
     }
 }
